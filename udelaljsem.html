@@ -524,6 +524,8 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_c">C++</a>
 <ul class="sectlevel2">
 <li><a href="#_genomicrangequery">GenomicRangeQuery</a></li>
+<li><a href="#_equileader">EquiLeader</a></li>
+<li><a href="#_dominator">Dominator</a></li>
 <li><a href="#_zadání_maxcounters">Zadání MaxCounters:</a></li>
 <li><a href="#_countdiv">CountDiv</a></li>
 <li><a href="#_passingcars">PassingCars</a></li>
@@ -542,6 +544,9 @@ table.CodeRay td.code>pre{padding:0}
 <li><a href="#_python">Python</a>
 <ul class="sectlevel2">
 <li><a href="#_minavgtwoslice">MinAvgTwoSlice</a></li>
+<li><a href="#_brackets">Brackets</a></li>
+<li><a href="#_fish">Fish</a></li>
+<li><a href="#_stonewall">StoneWall</a></li>
 </ul>
 </li>
 </ul>
@@ -713,6 +718,309 @@ vector&lt;<span class="predefined-type">int</span>&gt; solution(<span class="pre
         }
     }
     <span class="keyword">return</span> res;
+}</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_equileader">EquiLeader</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>pro úlohu jsem si vytvořil objekt, který ve dvou instancích přistupuje k jednomu vektorovému poli. Obě instance si namapují počty hodnot na svém úseku, vyhodnotí <strong>leader</strong> a posun probíhá formou inkrementace/dekrementace adres a délky datového pole. Upraví se namapovaný počet jedné hodnoty. Při snížení počtu hodnoty, která byla <strong>leader*em je nutné projít mapu počtů jednotlivých hodnot, což je časově náročné. V ostatních případech však vystačím s již jednou spočtenou hodnotou *max</strong> z toho důvodu se mi nechtělo přesouvat tato data do vhodnější struktury. V hodnocení jsem dostal 100% správnost ale jen 75% výkon, byť ohodnoceno to bylo O(n)</em></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cpp"><span class="preprocessor">#include</span> <span class="include">&lt;iostream&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;vector&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;map&gt;</span>
+
+<span class="directive">using</span> <span class="keyword">namespace</span> std;
+
+<span class="comment">//jaky prvek - kolikrat se objevil</span>
+<span class="keyword">typedef</span> pair&lt;<span class="predefined-type">int</span>,<span class="predefined-type">unsigned</span> <span class="predefined-type">int</span>&gt; Par;
+<span class="directive">const</span> <span class="predefined-type">int</span> NO_VALUE = -<span class="integer">1000000001</span>; <span class="comment">// values [-1,000,000,000..1,000,000,000]</span>
+
+<span class="keyword">class</span> <span class="class">Dominator</span> {
+<span class="directive">private</span>:
+    <span class="predefined-type">int</span> *start; <span class="comment">//prvni prvek pole</span>
+    <span class="predefined-type">unsigned</span> <span class="predefined-type">long</span> num; <span class="comment">//pocet</span>
+    map&lt;<span class="predefined-type">int</span>,<span class="predefined-type">unsigned</span> <span class="predefined-type">int</span>&gt; prehled; <span class="comment">//hodnota,kolikrat</span>
+    map&lt;<span class="predefined-type">int</span>,<span class="predefined-type">unsigned</span> <span class="predefined-type">int</span>&gt;::iterator it;
+    Par max; <span class="comment">//nejvetsti cetnost nejake hodnoty</span>
+
+    <span class="directive">void</span> addDelKolik(<span class="predefined-type">int</span> co, <span class="predefined-type">bool</span> add=<span class="predefined-constant">true</span>) {
+        it = prehled.find(co);
+        <span class="predefined-type">unsigned</span> <span class="predefined-type">int</span> moznaMax  =<span class="integer">1</span>;
+        <span class="keyword">if</span> (it != prehled.end()){
+            <span class="keyword">if</span> (add) {
+                moznaMax= ++it-&gt;second;
+            } <span class="keyword">else</span> {
+              it-&gt;second--;<span class="keyword">return</span>; <span class="comment">//max nema smysl resit - viz.metoda zmensit</span>
+            }
+        } <span class="keyword">else</span> {
+            prehled[co]=<span class="integer">1</span>;
+        }
+        <span class="keyword">if</span> (max.second&lt;moznaMax) {
+            max=make_pair(co,moznaMax);
+        }
+    }
+
+    <span class="comment">//zridka pouzivana, jinak predelat</span>
+    Par getMax() {
+        Par max = make_pair(<span class="integer">0</span>,<span class="integer">0</span>);
+       <span class="keyword">for</span>(it=prehled.begin();it!=prehled.end();++it){
+          <span class="keyword">if</span> (it-&gt;second&gt;max.second) {
+              max = make_pair(it-&gt;first,it-&gt;second);
+          }
+       }
+        <span class="keyword">return</span> max;
+    }
+
+<span class="directive">public</span>:
+    Dominator(<span class="predefined-type">int</span> *astart, <span class="predefined-type">unsigned</span> <span class="predefined-type">long</span> anum) {
+        start = astart;num = anum;max=make_pair(<span class="integer">0</span>,<span class="integer">0</span>);
+        <span class="keyword">for</span>(<span class="predefined-type">unsigned</span> <span class="predefined-type">long</span> i=<span class="integer">0</span>;i&lt;num;i++) {
+            addDelKolik(*(start+i));
+        }
+    }
+
+    <span class="predefined-type">int</span> getLeader() {
+        <span class="keyword">if</span> (num==<span class="integer">1</span>) <span class="keyword">return</span> max.first;
+        <span class="keyword">if</span> (max.second&gt;(num/<span class="integer">2</span>)) <span class="keyword">return</span> max.first; <span class="keyword">else</span> <span class="keyword">return</span> NO_VALUE;
+    }
+
+    <span class="directive">void</span> zvetsit() {
+        num++;
+        addDelKolik(*(start+num-<span class="integer">1</span>));
+    }
+
+    <span class="directive">void</span> zmensit() {
+        <span class="predefined-type">int</span> ztraceno = *start;
+        start++;num--;
+        addDelKolik(ztraceno,<span class="predefined-constant">false</span>);
+        <span class="keyword">if</span> (ztraceno == max.first){ <span class="comment">//bohuzel, ohrozen leader</span>
+            max=getMax();
+        }
+    }
+};
+
+
+
+<span class="predefined-type">int</span> solution(vector&lt;<span class="predefined-type">int</span>&gt; &amp;A) {
+    <span class="comment">// write your code in C++14 (g++ 6.2.0)</span>
+    Dominator levy(A.data(),<span class="integer">1</span>);
+    Dominator pravy(A.data()+<span class="integer">1</span>,A.size()-<span class="integer">1</span>);
+    <span class="predefined-type">int</span> ll, pl, pocet=<span class="integer">0</span>;
+    <span class="keyword">for</span> (<span class="predefined-type">unsigned</span> <span class="predefined-type">int</span> i=<span class="integer">0</span>;i&lt;A.size();i++) {
+        ll = levy.getLeader();
+        pl = pravy.getLeader();
+        <span class="keyword">if</span> ((ll!=NO_VALUE)&amp;&amp;(pl!=NO_VALUE)) {
+           <span class="keyword">if</span> (ll==pl) {
+               pocet++;
+           }
+        }
+        <span class="comment">//cout &lt;&lt; &quot;levy:&quot; &lt;&lt;levy.getLeader() &lt;&lt; &quot; pravy: &quot; &lt;&lt;pravy.getLeader() &lt;&lt; endl;</span>
+        levy.zvetsit();
+        pravy.zmensit();
+    }
+    <span class="keyword">return</span> pocet;
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Task description
+A non-empty zero-indexed array A consisting of N integers is given.</p>
+</div>
+<div class="paragraph">
+<p>The leader of this array is the value that occurs in more than half of the elements of A.</p>
+</div>
+<div class="paragraph">
+<p>An equi leader is an index S such that 0 ≤ S &lt; N − 1 and two sequences A[0], A[1], &#8230;&#8203;, A[S] and A[S + 1], A[S + 2], &#8230;&#8203;, A[N − 1] have leaders of the same value.</p>
+</div>
+<div class="paragraph">
+<p>For example, given array A such that:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>    A[0] = 4
+    A[1] = 3
+    A[2] = 4
+    A[3] = 4
+    A[4] = 4
+    A[5] = 2
+we can find two equi leaders:</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>0, because sequences: (4) and (3, 4, 4, 4, 2) have the same leader, whose value is 4.
+2, because sequences: (4, 3, 4) and (4, 4, 2) have the same leader, whose value is 4.
+The goal is to count the number of equi leaders.</p>
+</div>
+<div class="paragraph">
+<p>Write a function:</p>
+</div>
+<div class="paragraph">
+<p>int solution(vector&lt;int&gt; &amp;A);</p>
+</div>
+<div class="paragraph">
+<p>that, given a non-empty zero-indexed array A consisting of N integers, returns the number of equi leaders.</p>
+</div>
+<div class="paragraph">
+<p>For example, given:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>    A[0] = 4
+    A[1] = 3
+    A[2] = 4
+    A[3] = 4
+    A[4] = 4
+    A[5] = 2
+the function should return 2, as explained above.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Assume that:</p>
+</div>
+<div class="paragraph">
+<p>N is an integer within the range [1..100,000];
+each element of array A is an integer within the range [−1,000,000,000..1,000,000,000].
+Complexity:</p>
+</div>
+<div class="paragraph">
+<p>expected worst-case time complexity is O(N);
+expected worst-case space complexity is O(N), beyond input storage (not counting the storage required for input arguments).
+Elements of input arrays can be modified.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_dominator">Dominator</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>použit známý postup postupného odebírání různých dvojic (při kterém se denominátor nezmění) vylepšený jen poznámkami do contejneru <strong>map</strong> - což mi umožnilo vyhnout se závěrečné kontrole, jestli zásobníkem vybraný kandidát skutečně překračuje počtem nadpoloviční počet prvků. Řešení ohodnoceno 100%.</em></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Task description
+A zero-indexed array A consisting of N integers is given. The dominator of array A is the value that occurs in more than half of the elements of A.</p>
+</div>
+<div class="paragraph">
+<p>For example, consider array A such that</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre> A[0] = 3    A[1] = 4    A[2] =  3
+ A[3] = 2    A[4] = 3    A[5] = -1
+ A[6] = 3    A[7] = 3
+The dominator of A is 3 because it occurs in 5 out of 8 elements of A (namely in those with indices 0, 2, 4, 6 and 7) and 5 is more than a half of 8.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Write a function</p>
+</div>
+<div class="paragraph">
+<p>int solution(vector&lt;int&gt; &amp;A);</p>
+</div>
+<div class="paragraph">
+<p>that, given a zero-indexed array A consisting of N integers, returns index of any element of array A in which the dominator of A occurs. The function should return −1 if array A does not have a dominator.</p>
+</div>
+<div class="paragraph">
+<p>Assume that:</p>
+</div>
+<div class="paragraph">
+<p>N is an integer within the range [0..100,000];
+each element of array A is an integer within the range [−2,147,483,648..2,147,483,647].
+For example, given array A such that</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre> A[0] = 3    A[1] = 4    A[2] =  3
+ A[3] = 2    A[4] = 3    A[5] = -1
+ A[6] = 3    A[7] = 3
+the function may return 0, 2, 4, 6 or 7, as explained above.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Complexity:</p>
+</div>
+<div class="paragraph">
+<p>expected worst-case time complexity is O(N);
+expected worst-case space complexity is O(1), beyond input storage (not counting the storage required for input arguments).
+Elements of input arrays can be modified.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="cpp"><span class="preprocessor">#include</span> <span class="include">&lt;iostream&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;vector&gt;</span>
+<span class="preprocessor">#include</span> <span class="include">&lt;map&gt;</span>
+
+<span class="directive">using</span> <span class="keyword">namespace</span> std;
+
+<span class="predefined-type">int</span> solution(vector&lt;<span class="predefined-type">int</span>&gt; &amp;A) {
+
+    <span class="predefined-type">int</span> zasobnik;
+    <span class="predefined-type">int</span> sizezasobnik=<span class="integer">0</span>;
+    <span class="keyword">typedef</span> map&lt;<span class="predefined-type">int</span>,pair&lt;<span class="predefined-type">int</span>,<span class="predefined-type">int</span>&gt;&gt; Dict;
+    Dict pocty;
+    Dict::iterator itpocty;
+
+    <span class="comment">//odeberem ruzne -&gt; dominator se nezmeni</span>
+    <span class="keyword">for</span> (<span class="predefined-type">int</span> i=<span class="integer">0</span>;i&lt;A.size();i++) {
+        <span class="comment">// do mapy si poznamename pocty a pozice hodnot</span>
+        itpocty = pocty.find(A[i]);
+        <span class="keyword">if</span> (itpocty != pocty.end()){
+            itpocty-&gt;second.second++;
+        } <span class="keyword">else</span> {
+            pocty[A[i]]=make_pair(i,<span class="integer">1</span>);
+        }
+
+
+        <span class="comment">//zasobnik si pamatuje jen posledni hodnotu a pocet</span>
+        <span class="comment">//protoze jsou beztak vsechny stejne</span>
+        <span class="keyword">if</span> (sizezasobnik==<span class="integer">0</span>) {
+            zasobnik=A[i];sizezasobnik++;
+        } <span class="keyword">else</span> {
+            <span class="keyword">if</span> (zasobnik==A[i]) {
+                sizezasobnik++;
+            } <span class="keyword">else</span> {
+                sizezasobnik--;
+            }
+        }
+    }
+
+
+
+    <span class="comment">//kontrolni tisk prehledu (hodnota/pozice/pocet)</span>
+    cout &lt;&lt;zasobnik &lt;&lt;<span class="string"><span class="delimiter">&quot;</span><span class="content"> - </span><span class="delimiter">&quot;</span></span> &lt;&lt; sizezasobnik&lt;&lt; endl;
+    cout&lt;&lt;<span class="string"><span class="delimiter">&quot;</span><span class="content">mapa</span><span class="delimiter">&quot;</span></span>&lt;&lt; endl;
+    <span class="keyword">for</span> ( itpocty=pocty.begin(); itpocty!=pocty.end(); ++itpocty)
+        cout &lt;&lt; <span class="string"><span class="delimiter">&quot;</span><span class="content">hodnota: </span><span class="delimiter">&quot;</span></span>&lt;&lt;itpocty-&gt;first &lt;&lt; <span class="string"><span class="delimiter">&quot;</span><span class="content">pozice: </span><span class="delimiter">&quot;</span></span> &lt;&lt; itpocty-&gt;second.first
+             &lt;&lt; <span class="string"><span class="delimiter">&quot;</span><span class="content"> =&gt; pocty </span><span class="delimiter">&quot;</span></span> &lt;&lt; itpocty-&gt;second.second &lt;&lt; <span class="char">'\n'</span>;
+
+
+    <span class="comment">//zaverecne zhodnoceni</span>
+    <span class="keyword">if</span> (sizezasobnik&gt;<span class="integer">0</span>) { <span class="comment">//je nejakej kandidat na dominatora?</span>
+        <span class="predefined-type">int</span> tmp1 = pocty[zasobnik].first;
+        <span class="predefined-type">int</span> tmp2 = pocty[zasobnik].second;
+        <span class="keyword">if</span> (tmp2&gt;(A.size()/<span class="integer">2</span>)) <span class="comment">//je to dominator?</span>
+            <span class="keyword">return</span> tmp1; <span class="comment">//vrat jeho pozici ve vektoru A</span>
+        <span class="keyword">else</span>
+            <span class="keyword">return</span> -<span class="integer">1</span>;
+    } <span class="keyword">else</span> {
+        <span class="keyword">return</span> -<span class="integer">1</span>;
+    }
+}
+
+<span class="predefined-type">int</span> main() {
+    vector&lt;<span class="predefined-type">int</span>&gt; A = {<span class="integer">3</span>,<span class="integer">4</span>,<span class="integer">3</span>,<span class="integer">2</span>,<span class="integer">3</span>,-<span class="integer">1</span>,<span class="integer">3</span>,<span class="integer">3</span>};
+    <span class="comment">//vector&lt;int&gt; A = {3,4,3,2,4,4,3,-1,4,4,-1,-1,-1,-1,-1,10,-1,-1,-1,3,3};</span>
+    cout &lt;&lt; solution(A) &lt;&lt; endl;
+    <span class="keyword">return</span> <span class="integer">0</span>;
 }</code></pre>
 </div>
 </div>
@@ -1598,12 +1906,267 @@ Elements of input arrays can be modified.</p>
 </div>
 </div>
 </div>
+<div class="sect2">
+<h3 id="_brackets">Brackets</h3>
+<div class="paragraph">
+<p>Task description
+A string S consisting of N characters is considered to be properly nested if any of the following conditions is true:</p>
+</div>
+<div class="paragraph">
+<p>S is empty;
+S has the form "(U)" or "[U]" or "{U}" where U is a properly nested string;
+S has the form "VW" where V and W are properly nested strings.
+For example, the string "{[()()]}" is properly nested but "([)()]" is not.</p>
+</div>
+<div class="paragraph">
+<p>Write a function:</p>
+</div>
+<div class="paragraph">
+<p>def solution(S)</p>
+</div>
+<div class="paragraph">
+<p>that, given a string S consisting of N characters, returns 1 if S is properly nested and 0 otherwise.</p>
+</div>
+<div class="paragraph">
+<p>For example, given S = "{[()()]}", the function should return 1 and given S = "([)()]", the function should return 0, as explained above.</p>
+</div>
+<div class="paragraph">
+<p>Assume that:</p>
+</div>
+<div class="paragraph">
+<p>N is an integer within the range [0..200,000];
+string S consists only of the following characters: "(", "{", "[", "]", "}" and/or ")".
+Complexity:</p>
+</div>
+<div class="paragraph">
+<p>expected worst-case time complexity is O(N);
+expected worst-case space complexity is O(N) (not counting the storage required for input arguments).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="python"><span class="keyword">def</span> <span class="function">solution</span>(S):
+    zasobnik = []
+    lb = [<span class="string"><span class="delimiter">'</span><span class="content">[</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">{</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">(</span><span class="delimiter">'</span></span>]
+    rb = [<span class="string"><span class="delimiter">'</span><span class="content">]</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">}</span><span class="delimiter">'</span></span>, <span class="string"><span class="delimiter">'</span><span class="content">)</span><span class="delimiter">'</span></span>]
+    <span class="keyword">for</span> z <span class="keyword">in</span> S:
+        <span class="keyword">if</span> z <span class="keyword">in</span> lb:
+            zasobnik.append(z)
+        <span class="keyword">if</span> z <span class="keyword">in</span> rb:
+            <span class="keyword">if</span> <span class="predefined">len</span>(zasobnik) == <span class="integer">0</span>:
+                <span class="keyword">return</span> <span class="integer">0</span>
+            ch = zasobnik.pop()
+            <span class="keyword">if</span> rb[lb.index(ch)] != z:
+                <span class="keyword">return</span> <span class="integer">0</span>
+    <span class="keyword">return</span> <span class="integer">1</span> <span class="keyword">if</span> <span class="predefined">len</span>(zasobnik)==<span class="integer">0</span> <span class="keyword">else</span> <span class="integer">0</span></code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fish">Fish</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>v okamžiku kdy jedna ryba sežrala druhou, otočil jsem směr kontroly a jel obráceně. Vše jsem řešil jedním cyklem bez volání funkcí, kvůli výkonu jsem nemazal prvky z pole, ani jsem je nijak nevkládal &#8594; pouze přepisoval hodnotu. U „large-random nad 100000 ryb“ testu jsem ale neprošel - zřejmě se mi cyklus zbytečně proplétal přes prázdná pole. 87% mi u této úlohy postačuje, protože vím, jak bych to mohl urychlit - na začátku dlouhého prázdného místa bych si poznamenal, kam mám s ukazatelem polohy rovnou skočit</em></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Task description
+You are given two non-empty zero-indexed arrays A and B consisting of N integers. Arrays A and B represent N voracious fish in a river, ordered downstream along the flow of the river.</p>
+</div>
+<div class="paragraph">
+<p>The fish are numbered from 0 to N − 1. If P and Q are two fish and P &lt; Q, then fish P is initially upstream of fish Q. Initially, each fish has a unique position.</p>
+</div>
+<div class="paragraph">
+<p>Fish number P is represented by A[P] and B[P]. Array A contains the sizes of the fish. All its elements are unique. Array B contains the directions of the fish. It contains only 0s and/or 1s, where:</p>
+</div>
+<div class="paragraph">
+<p>0 represents a fish flowing upstream,
+1 represents a fish flowing downstream.
+If two fish move in opposite directions and there are no other (living) fish between them, they will eventually meet each other. Then only one fish can stay alive − the larger fish eats the smaller one. More precisely, we say that two fish P and Q meet each other when P &lt; Q, B[P] = 1 and B[Q] = 0, and there are no living fish between them. After they meet:</p>
+</div>
+<div class="paragraph">
+<p>If A[P] &gt; A[Q] then P eats Q, and P will still be flowing downstream,
+If A[Q] &gt; A[P] then Q eats P, and Q will still be flowing upstream.
+We assume that all the fish are flowing at the same speed. That is, fish moving in the same direction never meet. The goal is to calculate the number of fish that will stay alive.</p>
+</div>
+<div class="paragraph">
+<p>For example, consider arrays A and B such that:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>  A[0] = 4    B[0] = 0
+  A[1] = 3    B[1] = 1
+  A[2] = 2    B[2] = 0
+  A[3] = 1    B[3] = 0
+  A[4] = 5    B[4] = 0
+Initially all the fish are alive and all except fish number 1 are moving upstream. Fish number 1 meets fish number 2 and eats it, then it meets fish number 3 and eats it too. Finally, it meets fish number 4 and is eaten by it. The remaining two fish, number 0 and 4, never meet and therefore stay alive.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Write a function:</p>
+</div>
+<div class="paragraph">
+<p>def solution(A, B)</p>
+</div>
+<div class="paragraph">
+<p>that, given two non-empty zero-indexed arrays A and B consisting of N integers, returns the number of fish that will stay alive.</p>
+</div>
+<div class="paragraph">
+<p>For example, given the arrays shown above, the function should return 2, as explained above.</p>
+</div>
+<div class="paragraph">
+<p>Assume that:</p>
+</div>
+<div class="paragraph">
+<p>N is an integer within the range [1..100,000];
+each element of array A is an integer within the range [0..1,000,000,000];
+each element of array B is an integer that can have one of the following values: 0, 1;
+the elements of A are all distinct.
+Complexity:</p>
+</div>
+<div class="paragraph">
+<p>expected worst-case time complexity is O(N);
+expected worst-case space complexity is O(N), beyond input storage (not counting the storage required for input arguments).
+Elements of input arrays can be modified.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="python"><span class="keyword">def</span> <span class="function">solution</span>(A, B):
+   smer=[[<span class="predefined-constant">False</span>,-<span class="integer">1</span>],[<span class="predefined-constant">False</span>,-<span class="integer">1</span>]]
+   i=<span class="integer">0</span>
+   sezrano=<span class="predefined-constant">False</span>
+   pocetsezranych = <span class="integer">0</span>
+   kam = <span class="integer">1</span>
+   <span class="keyword">while</span> <span class="predefined-constant">True</span>:
+      <span class="keyword">if</span> B[i]!=-<span class="integer">1</span>:
+          <span class="keyword">if</span> B[i]==kam:
+             smer[kam]=[<span class="predefined-constant">True</span>,i]
+          <span class="keyword">if</span> (B[i]== (<span class="keyword">not</span> kam)) <span class="keyword">and</span> smer[kam][<span class="integer">0</span>]:
+             sezrano=<span class="predefined-constant">True</span>
+             pocetsezranych+=<span class="integer">1</span>
+             <span class="keyword">if</span> A[smer[kam][<span class="integer">1</span>]]&gt;A[i]:
+                B[i]=-<span class="integer">1</span>
+             <span class="keyword">else</span>:
+                B[smer[kam][<span class="integer">1</span>]]=-<span class="integer">1</span>
+                smer[kam]=[<span class="predefined-constant">False</span>,-<span class="integer">1</span>]
+                kam = <span class="keyword">not</span> kam
+                smer[kam]=[<span class="predefined-constant">True</span>,i]
+      i+=<span class="integer">1</span> <span class="keyword">if</span> kam <span class="keyword">else</span> -<span class="integer">1</span>
+      <span class="keyword">if</span> i==-<span class="integer">1</span>:
+         <span class="keyword">if</span> <span class="keyword">not</span> sezrano:
+           <span class="keyword">break</span>
+         sezrano=<span class="predefined-constant">False</span>
+         i=<span class="integer">0</span>
+         kam = <span class="integer">1</span>
+         smer=[[<span class="predefined-constant">False</span>,-<span class="integer">1</span>],[<span class="predefined-constant">False</span>,-<span class="integer">1</span>]]
+      <span class="keyword">if</span> i==<span class="predefined">len</span>(B):
+         <span class="keyword">if</span> <span class="keyword">not</span> sezrano:
+            <span class="keyword">break</span>
+         sezrano=<span class="predefined-constant">False</span>
+         i=<span class="predefined">len</span>(B)-<span class="integer">1</span>
+         kam=<span class="integer">0</span>
+         smer=[[<span class="predefined-constant">False</span>,-<span class="integer">1</span>],[<span class="predefined-constant">False</span>,-<span class="integer">1</span>]]
+   <span class="keyword">return</span> <span class="predefined">len</span>(A)-pocetsezranych</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_stonewall">StoneWall</h3>
+<div class="ulist">
+<ul>
+<li>
+<p><em>původní řešení, kde jsem se jen opřel o filtry, mělo slabý výkon O(n*n):</em></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="python"><span class="keyword">def</span> <span class="function">solution</span>(H):
+    hladiny = []
+    pocet = <span class="integer">0</span>
+    <span class="keyword">for</span> i <span class="keyword">in</span> H:
+        <span class="keyword">if</span> i <span class="keyword">in</span> hladiny:
+            hladiny = [h <span class="keyword">for</span> h <span class="keyword">in</span> hladiny <span class="keyword">if</span> h&lt;=i]
+            <span class="keyword">continue</span>
+        <span class="keyword">else</span>:
+            hladiny = [h <span class="keyword">for</span> h <span class="keyword">in</span> hladiny <span class="keyword">if</span> h&lt;i]
+            hladiny.append(i)
+            pocet+=<span class="integer">1</span>
+    <span class="keyword">return</span> pocet</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><em>po uvědomění, že hladiny, které mám rušit se nachází vždy až na konci seznamu hladin, jsem výkon zvýšil na O(n):</em></p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="python"><span class="keyword">def</span> <span class="function">solution</span>(H):
+    hladiny = []
+    pocet = <span class="integer">0</span>
+    <span class="keyword">for</span> i <span class="keyword">in</span> H:
+        <span class="keyword">if</span> <span class="predefined">len</span>(hladiny)&gt;<span class="integer">0</span>:
+            <span class="keyword">while</span> <span class="predefined">len</span>(hladiny)&gt;<span class="integer">0</span> <span class="keyword">and</span> (hladiny[-<span class="integer">1</span>]&gt;i) :
+                hladiny.pop()
+        <span class="keyword">if</span> <span class="predefined">len</span>(hladiny)&gt;<span class="integer">0</span> <span class="keyword">and</span> i == hladiny[-<span class="integer">1</span>]:
+            <span class="keyword">continue</span>
+        <span class="keyword">else</span>:
+            hladiny.append(i)
+            pocet+=<span class="integer">1</span>
+    <span class="keyword">return</span> pocet</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Task description
+You are going to build a stone wall. The wall should be straight and N meters long, and its thickness should be constant; however, it should have different heights in different places. The height of the wall is specified by a zero-indexed array H of N positive integers. H[I] is the height of the wall from I to I+1 meters to the right of its left end. In particular, H[0] is the height of the wall&#8217;s left end and H[N−1] is the height of the wall&#8217;s right end.</p>
+</div>
+<div class="paragraph">
+<p>The wall should be built of cuboid stone blocks (that is, all sides of such blocks are rectangular). Your task is to compute the minimum number of blocks needed to build the wall.</p>
+</div>
+<div class="paragraph">
+<p>Write a function:</p>
+</div>
+<div class="paragraph">
+<p>def solution(H)</p>
+</div>
+<div class="paragraph">
+<p>that, given a zero-indexed array H of N positive integers specifying the height of the wall, returns the minimum number of blocks needed to build it.</p>
+</div>
+<div class="paragraph">
+<p>For example, given array H containing N = 9 integers:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>  H[0] = 8    H[1] = 8    H[2] = 5
+  H[3] = 7    H[4] = 9    H[5] = 8
+  H[6] = 7    H[7] = 4    H[8] = 8
+the function should return 7. The figure shows one possible arrangement of seven blocks.</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Assume that:</p>
+</div>
+<div class="paragraph">
+<p>N is an integer within the range [1..100,000];
+each element of array H is an integer within the range [1..1,000,000,000].
+Complexity:</p>
+</div>
+<div class="paragraph">
+<p>expected worst-case time complexity is O(N);
+expected worst-case space complexity is O(N), beyond input storage (not counting the storage required for input arguments).
+Elements of input arrays can be modified.</p>
+</div>
+</div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-07-08 17:42:16 CEST
+Last updated 2017-07-09 17:36:30 CEST
 </div>
 </div>
 </body>
